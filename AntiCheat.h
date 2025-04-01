@@ -2,6 +2,8 @@
 #include "cbase.h"
 #include "cs_player.h"
 #include "weapon_csbase.h"
+#include "MemoryProtection.h"
+#include "MLIntegration.h"
 
 #define MAX_ANGLE_DELTA 25.0f    // Maksymalna akceptowalna zmiana kątu w 1 klatce
 #define TRIGGERBOT_THRESHOLD 0.1f // 100 ms
@@ -29,3 +31,25 @@ public:
 };
 
 extern AntiCheatSystem g_AntiCheat;
+
+private:
+    MemoryGuardian memoryGuard;
+    AIModelManager mlModel;
+    
+    void InitializeMemoryProtection() {
+        memoryGuard.AddProtectedRegion((void*)0xABCDEF00, 0x1000); 
+        memoryGuard.AddProtectedRegion(this, sizeof(AntiCheatSystem));
+    }
+
+    void CollectMLData(C_CSPlayer* player) {
+        BehavioralFeatures features;
+        mlModel.AddToInferenceQueue(features);
+    }
+
+    void CheckForMLAnomalies(C_CSPlayer* player) {
+        float anomalyScore = mlModel.RunInference();
+        if (anomalyScore > 0.85f) {
+            FlagPlayer(player, "ML-detected cheating behavior");
+        }
+    }
+};
