@@ -1,4 +1,6 @@
 #include "AntiCheat.h"
+#include "MemoryProtection.h"
+#include "MLIntegration.h"
 
 AntiCheatSystem g_AntiCheat;
 
@@ -96,3 +98,25 @@ public:
 void InstallAntiCheatHooks() {
     AntiCheatHook_FireBullets::Hook();
 }
+
+private:
+    MemoryGuardian memoryGuard;
+    AIModelManager mlModel;
+    
+    void InitializeMemoryProtection() {
+        memoryGuard.AddProtectedRegion((void*)0xABCDEF00, 0x1000); 
+        memoryGuard.AddProtectedRegion(this, sizeof(AntiCheatSystem));
+    }
+
+    void CollectMLData(C_CSPlayer* player) {
+        BehavioralFeatures features;
+        mlModel.AddToInferenceQueue(features);
+    }
+
+    void CheckForMLAnomalies(C_CSPlayer* player) {
+        float anomalyScore = mlModel.RunInference();
+        if (anomalyScore > 0.85f) {
+            FlagPlayer(player, "ML-detected cheating behavior");
+        }
+    }
+};
