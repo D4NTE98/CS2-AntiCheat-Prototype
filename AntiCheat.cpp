@@ -145,5 +145,28 @@ public:
     }
 };
 
-// Przykład użycia w klasie AntiCheatSystem
 EncryptedValue<float> detectionThreshold{0.85f};
+
+// ml
+HOOK(void*, __fastcall, Hooked_memcpy, (void* dest, const void* src, size_t size)) {
+    if (IsProtectedRegion(dest)) {
+        ReportMemoryViolation();
+        return dest;
+    }
+    return original_Hooked_memcpy(dest, src, size);
+}
+
+void InstallSystemHooks() {
+    HOOK_FUNCTION(kernel32.dll, memcpy, Hooked_memcpy);
+}
+
+void ScanForForeignDLLs() {
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId());
+    MODULEENTRY32 moduleEntry;
+    
+    while (Module32Next(snapshot, &moduleEntry)) {
+        if (!IsValidModule(moduleEntry.szModule)) {
+            ReportUnauthorizedModule(moduleEntry.szModule);
+        }
+    }
+}
