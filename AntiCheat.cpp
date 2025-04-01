@@ -105,4 +105,45 @@ void InstallAntiCheatHooks() {
     
     EncryptMemoryRegion(g_AntiCheat.memoryGuard);
 }
+
+void AntiCheatSystem::CollectMLData(C_CSPlayer* player) {
+    BehavioralFeatures features;
+    
+    // Zbieranie danych o ruchu myszy
+    features.aimSpeedVariance = CalculateAimVariance(player);
+    
+    // Analiza czasu między strzałami
+    GetShotTimingStatistics(player, features.shotTimeDiffs);
+    
+    // Obliczanie entropii ruchów myszy
+    features.mouseMovementEntropy = CalculateEntropy(player->GetMouseSamples());
+    
+    mlModel.AddToInferenceQueue(features);
 }
+
+template<typename T>
+class EncryptedValue {
+private:
+    uint64_t xorKey;
+    T encryptedData;
+
+public:
+    EncryptedValue(T value) : xorKey(GenerateRandomKey()) {
+        encryptedData = Encrypt(value, xorKey);
+    }
+
+    T Get() const {
+        return Decrypt(encryptedData, xorKey);
+    }
+
+    void Set(T value) {
+        encryptedData = Encrypt(value, xorKey);
+    }
+
+    static T Encrypt(T data, uint64_t key) {
+        // ... implementacja szyfrowania XOR z rotacją
+    }
+};
+
+// Przykład użycia w klasie AntiCheatSystem
+EncryptedValue<float> detectionThreshold{0.85f};
