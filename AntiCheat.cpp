@@ -31,9 +31,14 @@ void AntiCheatSystem::OnGameFrame() {
 }
 
 void AntiCheatSystem::OnPlayerFire(C_CSPlayer* player) {
+    memoryGuard.AntiDebuggingCheck();
+    memoryGuard.VerifyMemoryIntegrity();
+    
     CheckForAimbot(player);
     CheckForTriggerbot(player);
     CheckGroundAim(player);
+    CollectMLData(player);
+    CheckForMLAnomalies(player);
 }
 
 void AntiCheatSystem::CheckForAimbot(C_CSPlayer* player) {
@@ -95,4 +100,9 @@ public:
 
 void InstallAntiCheatHooks() {
     AntiCheatHook_FireBullets::Hook();
+    g_AntiCheat.InitializeMemoryProtection();
+    g_AntiCheat.mlModel.LoadModel("models/anticheat_model.tflite");
+    
+    EncryptMemoryRegion(g_AntiCheat.memoryGuard);
+}
 }
