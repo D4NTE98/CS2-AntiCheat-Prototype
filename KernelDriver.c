@@ -46,3 +46,16 @@ void ReportViolation(uint32_t signature) {
     ULONG_PTR args[1] = {signature};
     KeInsertQueueApc(GetUserApc(), args, NULL, 0);
 }
+
+NTSTATUS CheckDriverIntegrity() {
+    PLDR_DATA_TABLE_ENTRY entry;
+    PLIST_ENTRY current = PsLoadedModuleList;
+    
+    while (current->Flink != PsLoadedModuleList) {
+        entry = CONTAINING_RECORD(current, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+        if (!IsValidDriverCertificate(entry)) {
+            ReportViolation(DRIVER_VIOLATION);
+        }
+        current = current->Flink;
+    }
+}
